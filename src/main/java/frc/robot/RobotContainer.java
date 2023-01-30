@@ -7,13 +7,17 @@ package frc.robot;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.RamseteController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+/* import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
-import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator; */
+import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.math.trajectory.constraint.DifferentialDriveVoltageConstraint;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.XboxController.Button;
 import frc.robot.subsystems.DriveSubsystem;
@@ -22,7 +26,10 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import java.util.List;
+
+import java.io.IOException;
+import java.nio.file.Path;
+//import java.util.List;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -86,6 +93,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+/* 
     // Create a voltage constraint to ensure we don't accelerate too fast
     var autoVoltageConstraint =
         new DifferentialDriveVoltageConstraint(
@@ -95,6 +103,7 @@ public class RobotContainer {
                 Constants.DriveConstants.kaVoltSecondsSquaredPerMeter),
             Constants.DriveConstants.kDriveKinematics,
             7);
+
 
     // Create config for trajectory
     TrajectoryConfig config =
@@ -116,11 +125,21 @@ public class RobotContainer {
             // End 3 meters straight ahead of where we started, facing forward
             new Pose2d(4, 2, new Rotation2d(0)),
             // Pass config
-            config);
+            config); */
+
+    //use pathweaver json for autonomous trajectory
+    String trajectoryJSON = "paths/test.wpilib.json";
+    Trajectory trajectory = new Trajectory();
+    try {
+        Path trajectoryPath = Filesystem.getDeployDirectory().toPath().resolve(trajectoryJSON);
+        trajectory = TrajectoryUtil.fromPathweaverJson(trajectoryPath);
+    } catch (IOException ex) {
+        DriverStation.reportError("Unable to open trajectory: " + trajectoryJSON, ex.getStackTrace());
+    }
 
     RamseteCommand ramseteCommand =
         new RamseteCommand(
-            exampleTrajectory,
+            trajectory,
             m_robotDrive::getPose,
             new RamseteController(
                 Constants.AutoConstants.kRamseteB, Constants.AutoConstants.kRamseteZeta),
@@ -137,7 +156,7 @@ public class RobotContainer {
             m_robotDrive);
 
     // Reset odometry to starting pose of trajectory.
-    m_robotDrive.resetOdometry(exampleTrajectory.getInitialPose());
+    m_robotDrive.resetOdometry(trajectory.getInitialPose());
 
     // Run path following command, then stop at the end.
     return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVolts(0, 0));
