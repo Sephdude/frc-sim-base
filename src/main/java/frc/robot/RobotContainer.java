@@ -97,7 +97,7 @@ public class RobotContainer {
   
   //Autonomous Commands
 
-  private final Command autoTest() {
+  public final Command autoTest() {
         //use pathweaver json for autonomous trajectory
         String trajectoryJSON = "paths/test.wpilib.json";
         Trajectory trajectory = new Trajectory();
